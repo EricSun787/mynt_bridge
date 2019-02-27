@@ -1,4 +1,6 @@
-int64[] p1
-int64[] p2
+int64 p1_x
+int64 p1_y
+int64 p2_x
+int64 p2_y
 ---
 int64 avr_dis

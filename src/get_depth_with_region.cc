@@ -322,16 +322,18 @@ int calcElment(const cv::Mat& depth,const cv::Point& point1,const cv::Point& poi
     }
   }
 
+  
+
   return (std::accumulate(std::begin(depth_value),std::end(depth_value),0.0)/depth_value.size()); 
   
 }
 
 bool calcDis(mynt_bridge::calcDis::Request &req, mynt_bridge::calcDis::Response &res)
 {
-  point1.x = req.p1[0];
-  point1.y = req.p1[1];
-  point2.x = req.p2[0];
-  point2.y = req.p2[1];
+  point1.x = req.p1_x;
+  point1.y = req.p1_y;
+  point2.x = req.p2_x;
+  point2.y = req.p2_y;
 
   res.avr_dis = calcElment<ushort>(depth_m_,point1,point2);
 
@@ -403,7 +405,7 @@ int main(int argc, char *argv[]) {
        
        buffer_depth = depth_data; 
        buffer_left = left_data;
-       printf("Depth is %d \n",buffer_depth.frame.at<ushort>(200,200));
+      // printf("Depth is %d \n",buffer_depth.frame.at<ushort>(200,200));
 
     }
     ros::spinOnce();
