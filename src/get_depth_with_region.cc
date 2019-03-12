@@ -182,44 +182,19 @@ double codffs[5] = {
       0.
 };
 
-pthread_mutex_t mutex_data_;
+//pthread_mutex_t mutex_data_;
 sensor_msgs::CameraInfoPtr getCameraInfo(const Stream &stream) {
-   // if (camera_info_ptrs_.find(stream) != camera_info_ptrs_.end()) {
-      //return camera_info_ptrs_[stream];
-    //}
-
-    // http://docs.ros.org/kinetic/api/sensor_msgs/html/msg/CameraInfo.html
     sensor_msgs::CameraInfo *camera_info = new sensor_msgs::CameraInfo();
     camera_info_ptrs_[stream] = sensor_msgs::CameraInfoPtr(camera_info);
-
-    //std::shared_ptr<IntrinsicsBase> in_base;
-
-    //camera_info->header.frame_id = "left_frame";
-    //camera_info->width = in_base->width;
-    //camera_info->height = in_base->height;
     camera_info->header.frame_id = "left_frame";
     camera_info->width = 640;
-    camera_info->height = 480;
-
-    //if (in_base->calib_model() == CalibrationModel::PINHOLE) {
-      //auto in = std::dynamic_pointer_cast<IntrinsicsPinhole>(in_base);
-      //     [fx  0 cx]
-      // K = [ 0 fy cy]
-      //     [ 0  0  1]
-      /*camera_info->K.at(0) = in->fx;
-      camera_info->K.at(2) = in->cx;
-      camera_info->K.at(4) = in->fy;
-      camera_info->K.at(5) = in->cy;
-      camera_info->K.at(8) = 1; */
+    camera_info->height = 400;
 
       camera_info->K.at(0) = 3.6220059643202876e+02;
       camera_info->K.at(2) = 4.0658699068023441e+02;
       camera_info->K.at(4) = 3.6350065250745848e+02;
       camera_info->K.at(5) = 2.3435161110061483e+02;
       camera_info->K.at(8) = 1;
-      //     [fx'  0  cx' Tx]
-      // P = [ 0  fy' cy' Ty]
-      //     [ 0   0   1   0]
       cv::Mat p = left_p_;
       for (int i = 0; i < p.rows; i++) {
         for (int j = 0; j < p.cols; j++) {
@@ -229,45 +204,10 @@ sensor_msgs::CameraInfoPtr getCameraInfo(const Stream &stream) {
 
       camera_info->distortion_model = "plumb_bob";
     
-      // D of plumb_bob: (k1, k2, t1, t2, k3)
-     /* for (int i = 0; i < 5; i++) {
-        camera_info->D.push_back(in->coeffs[i]);
-      }
-      */
       for (int i = 0; i < 5; i++) {
         camera_info->D.push_back(codffs[i]);
       }
-    //} 
-    /* else if (in_base->calib_model() == CalibrationModel::KANNALA_BRANDT) {
-      auto in = std::dynamic_pointer_cast<IntrinsicsEquidistant>(in_base);
 
-      camera_info->distortion_model = "kannala_brandt";
-
-      // coeffs: k2,k3,k4,k5,mu,mv,u0,v0
-      camera_info->D.push_back(in->coeffs[0]);  // k2
-      camera_info->D.push_back(in->coeffs[1]);  // k3
-      camera_info->D.push_back(in->coeffs[2]);  // k4
-      camera_info->D.push_back(in->coeffs[3]);  // k5
-
-      camera_info->K[0] = in->coeffs[4];  // mu
-      camera_info->K[4] = in->coeffs[5];  // mv
-      camera_info->K[2] = in->coeffs[6];  // u0
-      camera_info->K[5] = in->coeffs[7];  // v0
-      camera_info->K[8] = 1;
-
-      // auto baseline = api_->GetInfo(Info::NOMINAL_BASELINE);
-      // Eigen::Matrix3d K = Eigen::Matrix3d::Identity();
-      // K(0, 0) = camera_info->K[0];
-      // K(0, 2) = camera_info->K[2];
-      // K(1, 1) = camera_info->K[4];
-      // K(1, 2) = camera_info->K[5];
-      // Eigen::Map<Eigen::Matrix<double, 3, 4, Eigen::RowMajor>>(
-      //      camera_info->P.data()) = (Eigen::Matrix<double, 3, 4>() <<
-      //         K, Eigen::Vector3d(baseline * K(0, 0), 0, 0)).finished();
-    } else {
-    } */
-
-    // R to identity matrix
     camera_info->R.at(0) = 1.0;
     camera_info->R.at(1) = 0.0;
     camera_info->R.at(2) = 0.0;
@@ -279,7 +219,6 @@ sensor_msgs::CameraInfoPtr getCameraInfo(const Stream &stream) {
     camera_info->R.at(8) = 1.0;
 
     return camera_info_ptrs_[stream];
-   // return *camera_info;
   }
 void publishCamera(
       const Stream &stream, const api::StreamData &data, std::uint32_t seq,
@@ -290,12 +229,12 @@ void publishCamera(
     //header.seq = seq;
     header_p.stamp = stamp;
     header_p.frame_id = "left_data";
-    pthread_mutex_lock(&mutex_data_);
+   // pthread_mutex_lock(&mutex_data_);
     cv::Mat img = data.frame;
     auto &&msg =
         cv_bridge::CvImage(header_p, enc::BGR8, img).toImageMsg();
 
-    pthread_mutex_unlock(&mutex_data_);
+   // pthread_mutex_unlock(&mutex_data_);
     auto &&info = getCameraInfo(stream);
     //auto info = getCameraInfo(stream);
     //sensor_msgs::CameraInfoPtr &&info = {0};
@@ -310,20 +249,18 @@ template <typename T>
 int calcElment(const cv::Mat& depth,const cv::Point& point1,const cv::Point& point2)
 {
   std::vector<int> depth_value;
+  
 
   for(int i=point1.x;i<point2.x;i++)
   {
     for(int j=point1.y;j<point2.y;j++)
-    {
-      if(depth.at<T>(i,j) < 10000)
+    { 
+      if(depth.at<T>(j,i)>0 && depth.at<T>(j,i) < 5000)
       {
-        depth_value.push_back(depth.at<T>(i,j));
+        depth_value.push_back(depth.at<T>(j,i));
       }
     }
   }
-
-  
-
   return (std::accumulate(std::begin(depth_value),std::end(depth_value),0.0)/depth_value.size()); 
   
 }
@@ -366,12 +303,18 @@ int main(int argc, char *argv[]) {
 
   bool ok;
   auto &&requests = api->GetStreamRequests();
+  //auto &&request = api->SelectStreamRequest(&ok);
+  //if(!ok) return 1;
+  //api->ConfigStreamRequest(request);
 
   api->SetOptionValue(Option::IR_CONTROL, 80);
 
   api->EnableStreamData(Stream::DEPTH);
+  api->EnableStreamData(Stream::LEFT_RECTIFIED);
+  api->EnableStreamData(Stream::DISPARITY_NORMALIZED);
 
   api->Start(Source::VIDEO_STREAMING);
+  cv::namedWindow("depth");
 
   ros::init(argc,argv,"mynt_bridge");
   ros::NodeHandle nh;
@@ -379,22 +322,22 @@ int main(int argc, char *argv[]) {
   ros::ServiceServer service_image_req = nh.advertiseService("request_image",reqImage);
   ros::ServiceServer service_calc_depth = nh.advertiseService("calc_depth",calcDis);
 
-  pthread_mutex_init(&mutex_data_,nullptr);
+  //pthread_mutex_init(&mutex_data_,nullptr);
 
   image_transport::ImageTransport it_(nh);
-
   left_pub_  = it_.advertiseCamera("/left_image",1);
 
   while (ros::ok()) { 
     
     api->WaitForStreams();
 
-    auto &&left_data = api->GetStreamData(Stream::LEFT);
-    auto &&right_data = api->GetStreamData(Stream::RIGHT);
+    //auto &&left_data = api->GetStreamData(Stream::LEFT);
+    auto &&left_data = api->GetStreamData(Stream::LEFT_RECTIFIED);
+    //auto &&right_data = api->GetStreamData(Stream::RIGHT);
 
 
     auto &&depth_data = api->GetStreamData(Stream::DEPTH);
-    auto &&dep_data = api->GetStreamData(Stream::DISPARITY);
+    auto &&disp_data = api->GetStreamData(Stream::DISPARITY_NORMALIZED);
     
     std_msgs::Header header;
     header.stamp = ros::Time::now();
@@ -405,12 +348,23 @@ int main(int argc, char *argv[]) {
        
        buffer_depth = depth_data; 
        buffer_left = left_data;
+       //cv::imshow("depth",left_data.frame);
       // printf("Depth is %d \n",buffer_depth.frame.at<ushort>(200,200));
 
     }
+    if(!disp_data.frame.empty())
+	{
+		//printf("show \n");
+		auto &&depth_frame = disp_data.frame;
+		cv::applyColorMap(depth_frame,depth_frame,cv::COLORMAP_JET);
+    cv::rectangle(depth_frame,point1,point2,cv::Scalar(0,255,0),1);
+		cv::imshow("depth",depth_frame);
+    cv::waitKey(5);
+	}
+
     ros::spinOnce();
   }
-
+  cv::destroyAllWindows();
   api->Stop(Source::VIDEO_STREAMING);
   return 0;
 }

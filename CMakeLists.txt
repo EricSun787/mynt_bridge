@@ -111,6 +111,8 @@ set(LINK_LIBS
 
 add_executable(mynteye_bridge src/get_depth_with_region.cc)
 target_link_libraries(mynteye_bridge ${LINK_LIBS})
+#add_executable(mynteye_bridge_2 src/mynt_bridge_2.cc)
+#target_link_libraries(mynteye_bridge_2 ${LINK_LIBS})
 
 if(MSVC OR MSYS OR MINGW)
   target_compile_definitions(mynteye_wrapper_node
